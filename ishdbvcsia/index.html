@@ -1653,7 +1653,52 @@
       }, 1000);
   });
 </script>
+    <script>
+// Bloqueia o link decoration do VTurb/Converteai nos CTAs
+(function() {
+    const BLOCKED_PARAMS = ['sid5', 'sub16', 'sid1', 'sid2', 'sid3', 'sid4', 'sub1', 'sub2', 'sub3'];
     
+    function cleanLink(link) {
+        try {
+            const url = new URL(link.href);
+            let changed = false;
+            BLOCKED_PARAMS.forEach(param => {
+                if (url.searchParams.has(param)) {
+                    url.searchParams.delete(param);
+                    changed = true;
+                }
+            });
+            if (changed) {
+                link.href = url.toString();
+            }
+        } catch(e) {}
+    }
+    
+    // Intercepta o clique ANTES do VTurb modificar (capture phase)
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (!link || !link.href) return;
+        
+        // Só limpa links do RedTrack
+        if (link.href.includes('rt.yourhealthydailyguide.com')) {
+            cleanLink(link);
+            
+            // Observer para re-limpar caso o VTurb modifique depois
+            setTimeout(() => cleanLink(link), 0);
+            setTimeout(() => cleanLink(link), 50);
+        }
+    }, true); // true = capture phase, roda ANTES dos outros listeners
+    
+    // Também limpa periodicamente qualquer decoration já aplicada
+    function cleanAllLinks() {
+        document.querySelectorAll('a[href*="rt.yourhealthydailyguide.com"]').forEach(cleanLink);
+    }
+    
+    // Limpa ao carregar e a cada 2s (pra pegar decorations tardias do VTurb)
+    window.addEventListener('load', cleanAllLinks);
+    setInterval(cleanAllLinks, 2000);
+})();
+</script>
   
 
 </body></html>
